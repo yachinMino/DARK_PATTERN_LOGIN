@@ -26,19 +26,20 @@ describe('ゲーム進行', () => {
   it('各ステージの先頭をチェックポイントに保存する', () => {
     const plans = reachPlans()
     expect(plans.checkpoint.step).toBe('plans')
-    const terms = play([next, next, next], plans)
+    const terms = play([next, next, next, next], plans)
     expect(terms.checkpoint.step).toBe('terms')
     expect(play([next, next, next], terms).checkpoint.step).toBe('warning')
   })
 
   it('最終確認後にクリア結果を一度だけ保存する', () => {
-    const final = play(Array<GameAction>(11).fill(next), reachPlans())
+    const final = play(Array<GameAction>(12).fill(next), reachPlans())
     expect(final.step).toBe('final')
     expect(final.status).toBe('playing')
     const cleared = play([next, next], final)
     expect(cleared.status).toBe('cleared')
     expect(cleared.records).toHaveLength(1)
     expect(cleared.records[0]?.elapsedMs).toBe(1000)
+    expect(cleared.records[0]).toMatchObject({ patternCount: 33 })
   })
 
   it('重大な失敗後は累積指標を保持してステージ先頭に戻す', () => {
@@ -89,23 +90,23 @@ describe('イベント', () => {
     const extras = play([next, next], reachPlans())
     const cancellation = play([{ type: 'consent', pattern: 7 }, { type: 'offer', event: 'cancel-extras' }, next], extras)
     expect(cancellation.step).toBe('extras')
-    expect(play([{ type: 'undo-extras' }], cancellation).step).toBe('terms')
+    expect(play([{ type: 'undo-extras' }], cancellation).step).toBe('order')
   })
 
   it('すべての仕掛けを固有IDで定義する', () => {
-    expect(new Set(patterns.map(pattern => pattern.id)).size).toBe(30)
+    expect(new Set(patterns.map(pattern => pattern.id)).size).toBe(33)
   })
 })
 
 describe('評価と保存', () => {
   it('不要な同意を誤操作や時間より大きく減点する', () => {
     const stats = { mistakes: 0, consents: 0, hints: 0, retries: 0 }
-    const clean = evaluate(stats, 30, 120_000)
+    const clean = evaluate(stats, 33, 120_000)
     expect(clean).toEqual({ points: 100, grade: 'S' })
-    expect(evaluate({ ...stats, consents: 3 }, 26, 120_000)).toEqual({ points: 57, grade: 'C' })
-    expect(evaluate({ ...stats, mistakes: 3 }, 26, 120_000).points).toBeGreaterThan(57)
-    expect(evaluate({ ...stats, consents: 3 }, 26, 120_000).points)
-      .toBeLessThan(evaluate(stats, 26, 45 * 60_000).points)
+    expect(evaluate({ ...stats, consents: 3 }, 29, 120_000)).toEqual({ points: 57, grade: 'C' })
+    expect(evaluate({ ...stats, mistakes: 3 }, 29, 120_000).points).toBeGreaterThan(57)
+    expect(evaluate({ ...stats, consents: 3 }, 29, 120_000).points)
+      .toBeLessThan(evaluate(stats, 29, 45 * 60_000).points)
   })
 
   it('同じシードとプレイ回数から同じ構成を生成する', () => {
@@ -130,7 +131,7 @@ describe('評価と保存', () => {
   })
 
   it('リセットは設定とクリア履歴を保持して開始地点に戻る', () => {
-    const cleared = play([...Array<GameAction>(12).fill(next)], reachPlans())
+    const cleared = play(Array<GameAction>(13).fill(next), reachPlans())
     const newGame = play([{ type: 'motion', reduced: true }, { type: 'reset' }], cleared)
     expect(newGame.step).toBe('cookie')
     expect(newGame.reducedMotion).toBe(true)
@@ -157,7 +158,7 @@ it('ゲーム内で表示するシードから初回を含む構成を再現す�
 })
 
 it('表示できない日時のクリア記録は保存の破損として扱う', () => {
-  const cleared = play(Array<GameAction>(12).fill(next), reachPlans())
+  const cleared = play(Array<GameAction>(13).fill(next), reachPlans())
   const record = cleared.records[0]!
   const corrupt = { ...cleared, records: [record, { ...record, clearedAt: Number.MAX_SAFE_INTEGER }] }
   expect(parseSave(serialize(corrupt))).toBeUndefined()
@@ -175,4 +176,18 @@ it('同じヒントを開き直した回数も記録する', () => {
   const run = play([{ type: 'show-hint' }, { type: 'close', event: 'hint' }, { type: 'show-hint' }])
   expect(run.stats.hints).toBe(2)
   expect(parseSave(serialize(run))?.hints).toEqual(['cookie', 'cookie'])
+})
+
+it('更新前に済ませた手続きに追加された仕掛けを、クリア時に減点しない', () => {
+  const terms = play([next, next, next, next], reachPlans())
+  const oldRun = {
+    ...terms,
+    encountered: terms.encountered.filter(id => id <= 30),
+    resolved: terms.resolved.filter(id => id <= 30),
+    avoided: terms.avoided.filter(id => id <= 30),
+  }
+  const restored = parseSave(serialize(oldRun))
+  expect(restored?.step).toBe('terms')
+  const cleared = play(Array<GameAction>(9).fill(next), restored)
+  expect(cleared.records[0]).toMatchObject({ patternCount: 30, points: 98 })
 })

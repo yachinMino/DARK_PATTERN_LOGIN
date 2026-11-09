@@ -22,6 +22,7 @@ export const stepConfig: Record<StepId, StepDefinition> = {
   plans: { stage: 2, hint: '受付時間と残り人数は表示上の数値です。特典の対象条件と、毎月の支払額を確認してください。' },
   fees: { stage: 2, hint: '手数料の支払いと、会員情報の引き継ぎは別の手続きです。料金明細の下を確認してください。' },
   extras: { stage: 2, hint: 'ログインに追加サービスは不要です。最初から付いているチェックを確認してください。' },
+  order: { stage: 2, hint: '注文内容には自動で追加された商品があります。今月分の停止と、定期便の取り消しでは、次回のお届けの扱いが異なります。' },
   terms: { stage: 3, hint: '特典を自動適用する条項と、認証を引き継ぐ条項を探してください。条項内に各手続きがあります。' },
   privacy: { stage: 3, hint: '各回答文が、案内の受信と閲覧履歴の提供を最終的に許可するか、順に確認してください。' },
   review: { stage: 3, hint: '会員特典を放棄しても、ログインの申請は取り消されません。' },
@@ -71,7 +72,12 @@ export const patterns: readonly PatternDefinition[] = [
   { id: 28, step: 'credentials', credit: 'next', title: '自動入力による選択変更' },
   { id: 29, step: 'fallback', credit: 'back', title: '戻る操作の妨害' },
   { id: 30, step: 'final', credit: 'next', title: 'ログイン後の追加認証' },
+  { id: 31, step: 'fees', credit: 'next', title: 'ポイント表示による金額の隠蔽' },
+  { id: 32, step: 'order', credit: 'next', title: '注文への商品の無断追加' },
+  { id: 33, step: 'order', credit: 'next', title: '解約に見せかけた一時停止' },
 ]
+
+export const legacyPatternCount = 30
 
 interface EventRule {
   priority: number
@@ -108,4 +114,5 @@ export const relatedPatterns: Partial<Record<PatternId, PatternId[]>> = {
   14: [5],
   21: [10],
   22: [17, 18, 19],
+  31: [10, 21],
 }

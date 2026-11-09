@@ -1,3 +1,5 @@
+import { patterns } from './config'
+
 export interface Stats {
   mistakes: number
   consents: number
@@ -9,7 +11,6 @@ export type Grade = 'S' | 'A' | 'B' | 'C' | 'D'
 
 export const scoring = {
   maximum: 100,
-  patternCount: 30,
   mistake: 3,
   consent: 13,
   hint: 4,
@@ -26,10 +27,10 @@ export const scoring = {
   ] satisfies { grade: Grade; minimum: number }[],
 }
 
-export function evaluate(stats: Stats, avoided: number, elapsedMs: number): { points: number; grade: Grade } {
+export function evaluate(stats: Stats, avoided: number, elapsedMs: number, patternCount = patterns.length): { points: number; grade: Grade } {
   const overtime = Math.max(0, elapsedMs / 60_000 - scoring.graceMinutes)
   const timePenalty = Math.min(scoring.overtimeLimit, Math.floor(overtime / scoring.overtimeIntervalMinutes))
-  const points = Math.max(0, scoring.maximum - timePenalty - Math.max(0, scoring.patternCount - avoided)
+  const points = Math.max(0, scoring.maximum - timePenalty - Math.max(0, patternCount - avoided)
     - stats.mistakes * scoring.mistake - stats.consents * scoring.consent
     - stats.hints * scoring.hint - stats.retries * scoring.retry)
   return { points, grade: scoring.grades.find(entry => points >= entry.minimum)?.grade ?? 'D' }

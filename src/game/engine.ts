@@ -1,4 +1,4 @@
-import { adPages, defaultSeed, eventAppliesToStep, eventRules, patterns, relatedPatterns, stepConfig } from './config'
+import { adPages, defaultSeed, eventAppliesToStep, eventRules, legacyPatternCount, patterns, relatedPatterns, stepConfig } from './config'
 import { evaluate } from './scoring'
 import type { Grade, Stats } from './scoring'
 import { steps } from './types'
@@ -14,6 +14,7 @@ export interface ClearRecord extends Stats {
   clearedAt: number
   elapsedMs: number
   avoided: number
+  patternCount?: number
   points: number
   grade: Grade
 }
@@ -134,7 +135,7 @@ function resolvePattern(run: Run, id: PatternId): Run {
 
 function resolveOnAdvance(run: Run): Run {
   return patterns.filter(pattern => pattern.step === run.step && pattern.credit === 'next')
-    .reduce((current, pattern) => resolvePattern(current, pattern.id), run)
+    .reduce((current, pattern) => resolvePattern(current, pattern.id), { ...run, encountered: withEncounter(run, run.step) })
 }
 
 function move(run: Run, step: StepId, now: number): Run {
@@ -153,13 +154,15 @@ function advance(run: Run, now: number): Run {
   const resolved = resolveOnAdvance(run)
   const step = steps[steps.indexOf(run.step) + 1]
   if (step) return move(resolved, step, now)
+  const patternCount = patterns.filter(pattern => pattern.id <= legacyPatternCount || resolved.encountered.includes(pattern.id)).length
   const record: ClearRecord = {
     ...resolved.stats,
     seed: resolved.seed,
     elapsedMs: resolved.elapsedMs,
     avoided: resolved.avoided.length,
+    patternCount,
     clearedAt: now,
-    ...evaluate(resolved.stats, resolved.avoided.length, resolved.elapsedMs),
+    ...evaluate(resolved.stats, resolved.avoided.length, resolved.elapsedMs, patternCount),
   }
   return {
     ...resolved, pending: [], status: 'cleared',

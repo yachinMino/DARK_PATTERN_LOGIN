@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { startGame, throughStorefront } from './route'
+import { button, dismissOrder, startGame, throughStorefront } from './route'
 
 async function reachPlans(page: Page) {
   await startGame(page)
@@ -13,13 +13,39 @@ async function reachExtras(page: Page) {
   await page.getByRole('button', { name: '手数料を支払わずに続ける' }).click()
 }
 
-async function reachTerms(page: Page) {
+async function reachOrder(page: Page) {
   await reachExtras(page)
   await page.getByRole('checkbox', { name: '余白お届け便を申し込む' }).uncheck()
   await page.getByRole('checkbox', { name: '新刊・入荷のお知らせを受け取る' }).uncheck()
   await page.getByRole('checkbox', { name: '共同企画先に閲覧傾向を提供する' }).uncheck()
   await page.getByRole('button', { name: '選択内容で続ける' }).click()
 }
+
+async function reachTerms(page: Page) {
+  await reachOrder(page)
+  await dismissOrder(page)
+}
+
+test('ポイント表示の手数料は換算額を確認でき、承認すると再開画面が出ます', async ({ page }) => {
+  await reachPlans(page)
+  await button(page, '基本会員で続ける').click()
+  await page.getByText('ポイントの換算条件', { exact: true }).click()
+  await expect(page.getByText('220ポイントは440円分です。')).toBeVisible()
+  await button(page, '220ポイントで引き継ぐ').click()
+  await expect(page.getByRole('dialog', { name: '手続きを中断しました' })).toBeVisible()
+})
+
+test('今月分を停止しても次回分は残り、定期便を取り消して進めます', async ({ page }) => {
+  await reachOrder(page)
+  await expect(page.getByText('紙もの見本セット', { exact: true })).toBeVisible()
+  await button(page, 'お届け予定を変更する').click()
+  await button(page, '今月分を停止する').click()
+  await expect(page.getByText('次回以降は月額330円でお届けします。')).toBeVisible()
+  await button(page, '定期便を取り消す').click()
+  await expect(page.getByText('追加商品はありません。')).toBeVisible()
+  await button(page, '追加注文なしで続ける').click()
+  await expect(page.getByRole('heading', { name: '会員利用規約' })).toBeVisible()
+})
 
 test('受付の表示が終了しても基本会員を選べます', async ({ page }) => {
   await page.clock.install()
@@ -55,6 +81,7 @@ test('有料のお届け便を外して進むと、残りの任意登録を取�
 
   const cancel = page.getByRole('dialog', { name: '追加サービスの取り消し' })
   await cancel.getByRole('button', { name: '追加サービスを取り消す' }).click()
+  await dismissOrder(page)
   await expect(page.getByRole('heading', { name: '会員利用規約' })).toBeVisible()
 })
 

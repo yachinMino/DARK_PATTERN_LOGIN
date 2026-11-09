@@ -1,5 +1,5 @@
 import { answers } from '../game/answers'
-import { patterns, stageNames, stages, stepConfig } from '../game/config'
+import { legacyPatternCount, patterns, stageNames, stages, stepConfig } from '../game/config'
 import type { Run } from '../game/engine'
 import { steps } from '../game/types'
 import type { PatternId } from '../game/types'
@@ -26,6 +26,7 @@ function verdictFor(run: Run, pattern: PatternId): keyof typeof verdicts {
 }
 
 export function AnswerReview({ run }: { run: Run }) {
+  const patternCount = run.records[0]?.patternCount ?? legacyPatternCount
   const counts = { avoided: 0, penalized: 0, seen: 0, unseen: 0 }
   for (const pattern of patterns) counts[verdictFor(run, pattern.id)]++
 
@@ -35,7 +36,8 @@ export function AnswerReview({ run }: { run: Run }) {
         <div>
           <p className="eyebrow">プレイ記録</p>
           <h1 id="answers">答え合わせ</h1>
-          <p>30種類の仕掛けの見分け方と回避手順を確認できます。</p>
+          <p>{patterns.length}種類の仕掛けの見分け方と回避手順を確認できます。</p>
+          {patternCount < patterns.length && <p>このプレイの評価対象は{patternCount}種類です。</p>}
         </div>
         <a className="btn btn--subtle" href="#result-title">クリア結果に戻る</a>
       </header>

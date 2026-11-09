@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { SceneProps } from '../game/types'
 import { termsChapters } from './memberTerms'
@@ -8,6 +8,8 @@ type Advance = Pick<SceneProps, 'dispatch'>
 
 const paidPlanAction = '優待会員で登録する'
 const paidFeeAction = '手数料を含めて引き継ぐ'
+const pointsFeeAction = '220ポイントで引き継ぐ'
+const confirmOrderAction = 'この内容で確定する'
 const extrasAction = '選択内容で続ける'
 
 function MemberPage({ title, description, children }: {
@@ -90,6 +92,18 @@ function Fees({ dispatch }: Advance) {
           <div><dt>優先引き継ぎ手数料</dt><dd>440 円</dd></div>
           <div><dt>今回のお支払い</dt><dd>440 円</dd></div>
         </dl>
+        <div className="member-fees__points">
+          <div>
+            <h3>余白ポイントでのお申し込み</h3>
+            <details>
+              <summary>ポイントの換算条件</summary>
+              <p>1ポイントは2円です。220ポイントは440円分です。</p>
+            </details>
+          </div>
+          <button type="button" className="btn" onClick={() => dispatch({ type: 'fail', pattern: 31, cause: pointsFeeAction })}>
+            {pointsFeeAction}
+          </button>
+        </div>
         <div className="member-fees__actions">
           <button type="button" className="btn btn--primary"
             onClick={() => dispatch({ type: 'fail', pattern: 21, cause: paidFeeAction })}>
@@ -142,6 +156,57 @@ function Extras({ dispatch }: Advance) {
         </fieldset>
         <button type="submit" className="btn btn--primary">{extrasAction}</button>
       </form>
+    </MemberPage>
+  )
+}
+
+function Order({ dispatch }: Advance) {
+  const [selection, setSelection] = useState<'active' | 'paused' | 'removed'>('active')
+  const [manageDelivery, setManageDelivery] = useState(false)
+  const confirm = useRef<HTMLButtonElement>(null)
+  const removed = selection === 'removed'
+
+  useLayoutEffect(() => {
+    if (removed) confirm.current?.focus()
+  }, [removed])
+
+  return (
+    <MemberPage title="追加注文の内容を確認する" description="会員情報にひも付けるお届け予定をご確認ください。">
+      <div className="member-card member-order">
+        <h2>お届け明細</h2>
+        {removed ? <p role="status">追加商品はありません。</p> : (
+          <>
+            <dl className="member-fees__list">
+              <div><dt>紙もの見本セット</dt><dd>{selection === 'paused' ? '今回 0 円' : '月額 330 円'}</dd></div>
+            </dl>
+            <p>会員情報の引き継ぎに合わせて定期便を追加しました。</p>
+            <button type="button" className="btn btn--subtle" aria-expanded={manageDelivery}
+              aria-controls="member-order-delivery" onClick={() => setManageDelivery(open => !open)}>
+              お届け予定を変更する
+            </button>
+            <div id="member-order-delivery" className="member-order__delivery" hidden={!manageDelivery}>
+              <h3>お届けを停止しますか</h3>
+              <p>今月分の停止を選ぶと、来月からお届けを再開します。</p>
+              <div className="member-fees__actions">
+                <button type="button" className="btn btn--primary" disabled={selection === 'paused'} onClick={() => {
+                  dispatch({ type: 'mistake', pattern: 33 })
+                  setSelection('paused')
+                }}>今月分を停止する</button>
+                <button type="button" className="btn btn--subtle" onClick={() => setSelection('removed')}>
+                  定期便を取り消す
+                </button>
+              </div>
+            </div>
+            {selection === 'paused' && <p role="status">次回以降は月額330円でお届けします。</p>}
+          </>
+        )}
+        <div className="member-fees__actions">
+          <button ref={confirm} type="button" className="btn btn--primary" onClick={() => {
+            if (removed) dispatch({ type: 'next' })
+            else dispatch({ type: 'fail', pattern: 32, cause: confirmOrderAction })
+          }}>{removed ? '追加注文なしで続ける' : confirmOrderAction}</button>
+        </div>
+      </div>
     </MemberPage>
   )
 }
@@ -306,6 +371,8 @@ export function Membership({ step, variant, elapsedMs, dispatch }: SceneProps) {
       return <Fees dispatch={dispatch} />
     case 'extras':
       return <Extras dispatch={dispatch} />
+    case 'order':
+      return <Order dispatch={dispatch} />
     case 'terms':
       return <Terms dispatch={dispatch} />
     case 'privacy':

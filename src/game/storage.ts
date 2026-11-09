@@ -1,4 +1,4 @@
-import { adPages, eventAppliesToStep, eventRules, stepConfig } from './config'
+import { adPages, eventAppliesToStep, eventRules, legacyPatternCount, patterns, stepConfig } from './config'
 import { historyLimit, recordLimit, variantFor } from './engine'
 import type { Run } from './engine'
 import { eventIds, steps } from './types'
@@ -27,7 +27,7 @@ const step = inList(steps)
 const event = inList(eventIds)
 const grade = inList(['S', 'A', 'B', 'C', 'D'])
 const status = inList(['playing', 'failed', 'cleared'])
-const pattern = (value: unknown) => integer(value, 30) && value > 0
+const pattern = inList(patterns.map(entry => entry.id))
 const bool = (value: unknown) => typeof value === 'boolean'
 
 function list(value: unknown, item: (entry: unknown) => boolean, limit: number, unique = false): value is unknown[] {
@@ -41,8 +41,11 @@ function stats(value: unknown): boolean {
 }
 
 function record(value: unknown): boolean {
-  return object(value) && stats(value) && integer(value.seed, 0xffffffff) && integer(value.clearedAt, 8_640_000_000_000_000)
-    && integer(value.elapsedMs) && integer(value.avoided, 30) && integer(value.points, 100) && grade(value.grade)
+  if (!object(value)) return false
+  const count = value.patternCount === undefined ? legacyPatternCount : value.patternCount
+  return integer(count, patterns.length) && count >= legacyPatternCount
+    && stats(value) && integer(value.seed, 0xffffffff) && integer(value.clearedAt, 8_640_000_000_000_000)
+    && integer(value.elapsedMs) && integer(value.avoided, count) && integer(value.points, 100) && grade(value.grade)
 }
 
 function log(value: unknown): boolean {
@@ -65,8 +68,8 @@ function validShape(value: unknown): value is Run {
     && list(value.pending, pending, eventIds.length)
     && list(value.fired, event, eventIds.length, true) && list(value.dismissed, event, eventIds.length, true)
     && bool(value.adCompleted) && bool(value.advanceAfterAd)
-    && list(value.encountered, pattern, 30, true) && list(value.resolved, pattern, 30, true)
-    && list(value.avoided, pattern, 30, true) && list(value.tainted, pattern, 30, true)
+    && list(value.encountered, pattern, patterns.length, true) && list(value.resolved, pattern, patterns.length, true)
+    && list(value.avoided, pattern, patterns.length, true) && list(value.tainted, pattern, patterns.length, true)
     && stats(value.stats) && list(value.history, log, historyLimit) && list(value.hints, step, historyLimit)
     && list(value.records, record, recordLimit)
     && (value.failure === null || object(value.failure) && pattern(value.failure.pattern)

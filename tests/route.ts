@@ -50,6 +50,12 @@ export async function throughStorefront(page: Page, mode: Mode = 'pointer') {
   await expect(page.getByRole('heading', { name: '会員プランを選ぶ' })).toBeVisible()
 }
 
+export async function dismissOrder(page: Page, mode: Mode = 'pointer') {
+  for (const label of ['お届け予定を変更する', '定期便を取り消す', '追加注文なしで続ける']) {
+    await activate(page, button(page, label), mode)
+  }
+}
+
 export async function toAuthentication(page: Page, mode: Mode = 'pointer') {
   await throughStorefront(page, mode)
   const choose = (label: string) => activate(page, button(page, label), mode)
@@ -59,6 +65,7 @@ export async function toAuthentication(page: Page, mode: Mode = 'pointer') {
     await activate(page, page.getByRole('checkbox', { name: label, exact: true }), mode, 'Space')
   }
   await choose('選択内容で続ける')
+  await dismissOrder(page, mode)
   await choose('会員特典の自動適用を解除する')
   await choose('個別設定へ進む')
   const mail = page.getByRole('group', { name: '商品案内を受け取らない設定の解除を希望しません。' })

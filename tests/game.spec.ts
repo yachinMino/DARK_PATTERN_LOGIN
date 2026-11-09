@@ -9,7 +9,7 @@ for (const seed of [undefined, 7, 29]) {
     await button(page, '登録せずログインする').press('Enter')
     await expect(page.getByRole('heading', { name: 'ログインしました' })).toBeVisible()
     await expect(page.getByText('総合評価')).toBeVisible()
-    await expect(page.getByText('29 / 30')).toBeVisible()
+    await expect(page.getByText('32 / 33')).toBeVisible()
     await page.reload()
     await expect(page.getByRole('heading', { name: 'ログインしました' })).toBeVisible()
   })

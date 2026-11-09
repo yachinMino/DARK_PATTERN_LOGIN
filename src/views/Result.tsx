@@ -1,3 +1,4 @@
+import { legacyPatternCount } from '../game/config'
 import type { Run } from '../game/engine'
 import { formatElapsed } from '../game/scoring'
 import type { GameAction } from '../game/types'
@@ -8,7 +9,7 @@ export function Result({ run, dispatch }: { run: Run; dispatch: (action: GameAct
 
   const metrics = [
     { label: 'クリア時間', value: formatElapsed(record.elapsedMs) },
-    { label: '回避した仕掛け', value: `${record.avoided} / 30` },
+    { label: '回避した仕掛け', value: `${record.avoided} / ${record.patternCount ?? legacyPatternCount}` },
     { label: '誤操作', value: `${record.mistakes}回` },
     { label: '不要な同意', value: `${record.consents}回` },
     { label: '使用したヒント', value: `${record.hints}件` },

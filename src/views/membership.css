@@ -205,6 +205,27 @@
 
 .member-scene .member-fees__decline:hover { background: #e1e3d7; }
 
+.member-fees__points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-block: 16px;
+  padding: 14px;
+  border: 1px solid var(--member-rule);
+  border-radius: 6px;
+  background: #edf1e6;
+}
+
+.member-fees__points h3, .member-order__delivery h3 { margin: 0 0 6px; font-size: .95rem; }
+.member-fees__points summary { cursor: pointer; font-size: .8rem; text-decoration: underline; }
+.member-fees__points p, .member-order__delivery p { margin: 8px 0; font-size: .85rem; line-height: 1.6; }
+.member-order { max-width: 42rem; margin-inline: auto; }
+.member-order__delivery { margin-block: 12px; padding: 14px; border: 1px solid var(--member-rule); border-radius: 6px; }
+.member-order__delivery .member-fees__actions { margin-top: 10px; }
+.member-order [role="status"] { color: var(--ink); font-weight: 700; }
+
 .member-scene fieldset {
   min-inline-size: 0;
   margin: 0;
