@@ -2,6 +2,7 @@ import { expect } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
 
 export type Mode = 'pointer' | 'keyboard'
+export const fullPageAdClose = '元のページへ戻る（続けて表示された広告を閉じる）'
 
 export function button(page: Page, name: string): Locator {
   return page.getByRole('button', { name, exact: true })
@@ -34,7 +35,7 @@ export async function refuseCookies(page: Page, mode: Mode = 'pointer') {
 }
 
 export async function dismissAds(page: Page, mode: Mode = 'pointer') {
-  for (const label of ['広告を閉じる', '続けて表示された広告を閉じる', '最後の広告を閉じる']) {
+  for (const label of ['広告を閉じる', fullPageAdClose, '最後の広告を閉じる']) {
     const control = button(page, label)
     if (await control.isVisible()) await activate(page, control, mode)
   }

@@ -17,7 +17,7 @@ interface StepDefinition {
 
 export const stepConfig: Record<StepId, StepDefinition> = {
   cookie: { stage: 1, hint: 'Cookieの許可範囲は、設定の管理画面から変更できます。' },
-  home: { stage: 1, hint: '店内メニューの会員向けリンクを確認してください。広告から開いた手続きには仮情報も入力しないでください。' },
+  home: { stage: 1, hint: '店内メニューの会員向けリンクを確認してください。大きな広告では、広告の絵柄の外側に戻る操作があります。' },
   feed: { stage: 1, hint: '新着情報の追加を待つ必要はありません。サイト情報に既存会員向けの窓口があります。' },
   plans: { stage: 2, hint: '受付時間と残り人数は表示上の数値です。特典の対象条件と、毎月の支払額を確認してください。' },
   fees: { stage: 2, hint: '手数料の支払いと、会員情報の引き継ぎは別の手続きです。料金明細の下を確認してください。' },
@@ -75,6 +75,7 @@ export const patterns: readonly PatternDefinition[] = [
   { id: 31, step: 'fees', credit: 'next', title: 'ポイント表示による金額の隠蔽' },
   { id: 32, step: 'order', credit: 'next', title: '注文への商品の無断追加' },
   { id: 33, step: 'order', credit: 'next', title: '解約に見せかけた一時停止' },
+  { id: 34, step: 'home', credit: 'ad', title: '画面を覆う大型広告' },
 ]
 
 export const legacyPatternCount = 30
@@ -101,6 +102,7 @@ export const eventRules: Record<EventId, EventRule> = {
 }
 
 export const adPages = [2, 2, 3] as const
+export const fullPageAdIndex = 1
 export const hintNudgeSeconds = 90
 export const defaultSeed = 165
 
@@ -115,4 +117,5 @@ export const relatedPatterns: Partial<Record<PatternId, PatternId[]>> = {
   21: [10],
   22: [17, 18, 19],
   31: [10, 21],
+  34: [2],
 }

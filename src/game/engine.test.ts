@@ -39,7 +39,7 @@ describe('ゲーム進行', () => {
     expect(cleared.status).toBe('cleared')
     expect(cleared.records).toHaveLength(1)
     expect(cleared.records[0]?.elapsedMs).toBe(1000)
-    expect(cleared.records[0]).toMatchObject({ patternCount: 33 })
+    expect(cleared.records[0]).toMatchObject({ patternCount: 34 })
   })
 
   it('重大な失敗後は累積指標を保持してステージ先頭に戻す', () => {
@@ -94,19 +94,19 @@ describe('イベント', () => {
   })
 
   it('すべての仕掛けを固有IDで定義する', () => {
-    expect(new Set(patterns.map(pattern => pattern.id)).size).toBe(33)
+    expect(new Set(patterns.map(pattern => pattern.id)).size).toBe(34)
   })
 })
 
 describe('評価と保存', () => {
   it('不要な同意を誤操作や時間より大きく減点する', () => {
     const stats = { mistakes: 0, consents: 0, hints: 0, retries: 0 }
-    const clean = evaluate(stats, 33, 120_000)
+    const clean = evaluate(stats, 34, 120_000)
     expect(clean).toEqual({ points: 100, grade: 'S' })
-    expect(evaluate({ ...stats, consents: 3 }, 29, 120_000)).toEqual({ points: 57, grade: 'C' })
-    expect(evaluate({ ...stats, mistakes: 3 }, 29, 120_000).points).toBeGreaterThan(57)
-    expect(evaluate({ ...stats, consents: 3 }, 29, 120_000).points)
-      .toBeLessThan(evaluate(stats, 29, 45 * 60_000).points)
+    expect(evaluate({ ...stats, consents: 3 }, 30, 120_000)).toEqual({ points: 57, grade: 'C' })
+    expect(evaluate({ ...stats, mistakes: 3 }, 30, 120_000).points).toBeGreaterThan(57)
+    expect(evaluate({ ...stats, consents: 3 }, 30, 120_000).points)
+      .toBeLessThan(evaluate(stats, 30, 45 * 60_000).points)
   })
 
   it('同じシードとプレイ回数から同じ構成を生成する', () => {

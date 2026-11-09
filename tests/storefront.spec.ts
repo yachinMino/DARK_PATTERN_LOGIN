@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { button, dismissAds, startGame } from './route'
+import { button, dismissAds, fullPageAdClose, startGame } from './route'
 
 async function openFeed(page: Page) {
   await startGame(page)
@@ -39,6 +39,28 @@ test('新着の自動追加を回避して既存会員の案内へ進めます',
   await expect(button(page, '既存会員の方はこちら')).toBeInViewport()
   await button(page, '既存会員の方はこちら').click()
   await expect(button(page, '基本会員で続ける')).toBeVisible()
+})
+
+test('スマートフォンで大型広告の偽の×を押しても本物の操作で閉じられます', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await startGame(page)
+  await button(page, 'すべてのCookieを許可').click()
+  await button(page, '会員ログイン').click()
+  await button(page, '広告を閉じる').click()
+
+  const ad = page.getByRole('dialog', { name: 'まるごと文具祭' })
+  const original = await ad.boundingBox()
+  expect(original?.width).toBeGreaterThanOrEqual(350)
+  expect(original?.height).toBeGreaterThanOrEqual(740)
+  await button(page, '広告の右上にある×').click()
+  await expect(ad.getByText('特典の詳細を表示しました。')).toBeVisible()
+  const expanded = await ad.boundingBox()
+  expect(expanded?.width).toBeGreaterThan(original!.width)
+  const close = button(page, fullPageAdClose)
+  await expect(close).toBeInViewport({ ratio: 1 })
+  await close.click()
+  await expect(ad).toBeHidden()
+  await expect(page.getByRole('link', { name: 'サイト情報へ' })).toBeVisible()
 })
 
 test('新着の追加が終了するとスクロールで会員案内へ到達できます', async ({ page }) => {

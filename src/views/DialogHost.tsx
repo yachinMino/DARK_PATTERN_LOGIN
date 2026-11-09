@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
-import { stepConfig } from '../game/config'
+import { fullPageAdIndex, stepConfig } from '../game/config'
 import type { Run } from '../game/engine'
 import type { EventId, GameAction } from '../game/types'
+import { FullPageAd } from './FullPageAd'
 
 type Modal = EventId | 'failure'
 type Dispatch = (action: GameAction) => void
@@ -68,15 +69,11 @@ function CookieReview({ dispatch }: { dispatch: Dispatch }) {
   )
 }
 
-const ads = [
-  { title: '会員だけの先行ご招待', line: '季節の紙ものを会員価格で。先行受付のお知らせです。', mark: '先行', close: '広告を閉じる' },
-  { title: 'お届け便の受付を開始しました', line: '毎月届く紙ものと文具の定期便です。', mark: '定期便', close: '続けて表示された広告を閉じる' },
-  { title: 'ご案内をお見逃しなく', line: '新刊と再入荷の情報をまとめてお届けします。', mark: '新着', close: '最後の広告を閉じる' },
-]
-
 function Ad({ page, dispatch }: { page: number; dispatch: Dispatch }) {
   const [enlarged, setEnlarged] = useState(false)
-  const ad = ads[page] ?? ads[0]!
+  const ad = page === 0
+    ? { title: '会員だけの先行ご招待', line: '季節の紙ものを会員価格で。先行受付のお知らせです。', mark: '先行', close: '広告を閉じる' }
+    : { title: 'ご案内をお見逃しなく', line: '新刊と再入荷の情報をまとめてお届けします。', mark: '新着', close: '最後の広告を閉じる' }
   return (
     <>
       <div className="ad-dialog-top">
@@ -123,7 +120,7 @@ function ModalContent({ modal, page, run, dispatch }: Omit<DialogProps, 'modal'>
     case 'cookie-review':
       return <CookieReview dispatch={dispatch} />
     case 'ad':
-      return <Ad key={page} page={page} dispatch={dispatch} />
+      return page === fullPageAdIndex ? <FullPageAd dispatch={dispatch} /> : <Ad key={page} page={page} dispatch={dispatch} />
     case 'fake-login':
       return <FakeLogin dispatch={dispatch} />
     case 'campaign':
@@ -190,6 +187,7 @@ function focusable(dialog: HTMLDialogElement) {
 export function DialogHost({ modal, page, run, dispatch }: DialogProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const origin = useRef<HTMLElement | null>(null)
+  const fullPage = modal === 'ad' && page === fullPageAdIndex
 
   useLayoutEffect(() => {
     const element = dialog.current
@@ -233,11 +231,13 @@ export function DialogHost({ modal, page, run, dispatch }: DialogProps) {
   }
 
   return (
-    <dialog ref={dialog} className="game-dialog" data-dialog={modal} aria-labelledby="game-dialog-title"
+    <dialog ref={dialog} className="game-dialog" data-dialog={modal} data-full-ad={fullPage || undefined} aria-labelledby="game-dialog-title"
       onKeyDown={trap} onCancel={event => { event.preventDefault(); escape() }}>
       {modal && <ModalContent key={modal} modal={modal} page={page} run={run} dispatch={dispatch} />}
       {modal && modal !== 'settings' && modal !== 'reset' && (
         <div className="dialog-utility">
+          {fullPage && <button type="button" className="full-ad__return" aria-label="元のページへ戻る（続けて表示された広告を閉じる）"
+            onClick={() => dispatch({ type: 'ad-next' })}>元のページへ戻る</button>}
           <button type="button" className="tool-button" onClick={() => dispatch({ type: 'offer', event: 'reset' })}>
             最初からやり直す
           </button>

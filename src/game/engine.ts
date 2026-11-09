@@ -1,4 +1,4 @@
-import { adPages, defaultSeed, eventAppliesToStep, eventRules, legacyPatternCount, patterns, relatedPatterns, stepConfig } from './config'
+import { adPages, defaultSeed, eventAppliesToStep, eventRules, fullPageAdIndex, legacyPatternCount, patterns, relatedPatterns, stepConfig } from './config'
 import { evaluate } from './scoring'
 import type { Grade, Stats } from './scoring'
 import { steps } from './types'
@@ -231,11 +231,18 @@ function apply(run: Run, action: GameAction, now: number): Run {
     case 'ad-next': {
       if (active?.id !== 'ad') return run
       const count = run.adCompleted ? 1 : adPages[variantFor(run.seed)]
-      if (active.page + 1 < count) {
-        const page = active.page + 1
-        return { ...run, pending: run.pending.map(item => item.id === 'ad' ? { ...item, page } : item) }
+      const current = active.page === fullPageAdIndex
+        ? resolvePattern({ ...run, encountered: addUnique(run.encountered, 34) }, 34)
+        : run
+      const page = active.page + 1
+      if (page < count) {
+        return {
+          ...current,
+          encountered: page === fullPageAdIndex ? addUnique(current.encountered, 34) : current.encountered,
+          pending: current.pending.map(item => item.id === 'ad' ? { ...item, page } : item),
+        }
       }
-      const closed = resolvePattern(resolvePattern(dismiss(run, 'ad'), 2), 11)
+      const closed = resolvePattern(resolvePattern(dismiss(current, 'ad'), 2), 11)
       const finished = { ...closed, adCompleted: true, advanceAfterAd: false }
       return run.advanceAfterAd ? advance(finished, now) : finished
     }

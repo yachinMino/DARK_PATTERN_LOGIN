@@ -1,5 +1,5 @@
 import { devices, expect, test } from '@playwright/test'
-import { activate, button, dismissAds, refuseCookies, startGame, throughAuthentication, throughStorefront, toAuthentication } from './route'
+import { activate, button, dismissAds, fullPageAdClose, refuseCookies, startGame, throughAuthentication, throughStorefront, toAuthentication } from './route'
 
 for (const seed of [undefined, 7, 29]) {
   test(`最初からログインを完了できる（シード ${seed ?? '初回'}）`, async ({ page }) => {
@@ -9,7 +9,7 @@ for (const seed of [undefined, 7, 29]) {
     await button(page, '登録せずログインする').press('Enter')
     await expect(page.getByRole('heading', { name: 'ログインしました' })).toBeVisible()
     await expect(page.getByText('総合評価')).toBeVisible()
-    await expect(page.getByText('32 / 33')).toBeVisible()
+    await expect(page.getByText('33 / 34')).toBeVisible()
     await page.reload()
     await expect(page.getByRole('heading', { name: 'ログインしました' })).toBeVisible()
   })
@@ -60,7 +60,8 @@ test('再読込で広告の表示順を復元し、フォーカスをダイア�
   await page.reload()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toHaveCount(1)
-  await expect(dialog.getByRole('button', { name: '続けて表示された広告を閉じる' })).toBeFocused()
+  await expect(dialog.getByRole('heading', { name: 'まるごと文具祭' })).toBeFocused()
+  await expect(button(page, fullPageAdClose)).toBeInViewport({ ratio: 1 })
   for (let count = 0; count < 7; count++) {
     await page.keyboard.press('Tab')
     expect(await dialog.evaluate(node => node.contains(document.activeElement))).toBe(true)

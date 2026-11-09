@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { button, startGame, throughAuthentication, toAuthentication } from './route'
 
-test('クリア後に全33種類の攻略と今回の判定を確認できる', async ({ page }) => {
+test('クリア後に全34種類の攻略と今回の判定を確認できる', async ({ page }) => {
   await startGame(page)
   await toAuthentication(page)
   await throughAuthentication(page)
@@ -11,7 +11,7 @@ test('クリア後に全33種類の攻略と今回の判定を確認できる', 
   await page.getByRole('link', { name: '答え合わせを見る' }).click()
   await expect(page.getByRole('heading', { name: '答え合わせ', exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2 })).toHaveCount(5)
-  await expect(page.getByRole('heading', { level: 3 })).toHaveCount(33)
+  await expect(page.getByRole('heading', { level: 3 })).toHaveCount(34)
   const cancellation = page.getByRole('article', { name: /解約に見せかけた一時停止/ })
   await expect(cancellation.getByText('回避済み', { exact: true })).toBeVisible()
   await expect(cancellation.getByText(/定期便を取り消す/)).toBeVisible()
