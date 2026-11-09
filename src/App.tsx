@@ -1,23 +1,33 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
-import { hintNudgeSeconds, stageNames, stepConfig } from './game/config'
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
+import { hintNudgeSeconds, stageNames, stages, stepConfig } from './game/config'
 import { activeEvent, variantFor } from './game/engine'
 import { useGame } from './game/store'
-import type { SceneProps, Stage } from './game/types'
+import type { SceneProps } from './game/types'
+import { AnswerReview } from './views/AnswerReview'
 import { Authentication } from './views/Authentication'
 import { DialogHost } from './views/DialogHost'
 import { Membership } from './views/Membership'
 import { Result } from './views/Result'
 import { Storefront } from './views/Storefront'
 
-const stages: Stage[] = [1, 2, 3, 4, 5]
+function subscribeHash(callback: () => void) {
+  window.addEventListener('hashchange', callback)
+  return () => window.removeEventListener('hashchange', callback)
+}
+
+function currentHash() {
+  return window.location.hash
+}
 
 export function App() {
   const { run, dispatch } = useGame()
+  const hash = useSyncExternalStore(subscribeHash, currentHash)
+  const answerRoute = /^#answers(?:-stage-[1-5])?$/.test(hash)
   const stage = stepConfig[run.step].stage
   const event = activeEvent(run)
   const modal = event?.id ?? (run.status === 'failed' ? 'failure' : undefined)
   const storefront = stage === 1
-  const scene = run.status === 'cleared' ? 'result' : run.step
+  const scene = run.status === 'cleared' ? (answerRoute ? 'answers' : 'result') : run.step
   const main = useRef<HTMLElement>(null)
   const previousScene = useRef(scene)
   const props: SceneProps = {
@@ -45,11 +55,18 @@ export function App() {
   }, [dispatch])
 
   useLayoutEffect(() => {
-    if (previousScene.current === scene) return
+    const changedScene = previousScene.current !== scene
     previousScene.current = scene
+    if (scene === 'answers' && hash !== '#answers') {
+      const target = document.getElementById(hash.slice(1))
+      target?.focus({ preventScroll: true })
+      target?.scrollIntoView()
+      return
+    }
+    if (!changedScene) return
     window.scrollTo(0, 0)
     main.current?.focus({ preventScroll: true })
-  }, [scene])
+  }, [hash, scene])
 
   const nudge = run.startedAt + run.elapsedMs - run.lastProgressAt >= hintNudgeSeconds * 1000
 
@@ -94,7 +111,7 @@ export function App() {
         </div>
       )}
       <main ref={main} tabIndex={-1} className={storefront ? 'game-main game-main--storefront' : 'game-main'}>
-        {run.status === 'cleared' ? <Result run={run} dispatch={dispatch} /> : (
+        {scene === 'answers' ? <AnswerReview run={run} /> : scene === 'result' ? <Result run={run} dispatch={dispatch} /> : (
           <div key={`${run.revision}-${run.step}`}>
             {stage === 1 ? <Storefront {...props} /> : stage < 4 ? <Membership {...props} /> : <Authentication {...props} />}
           </div>

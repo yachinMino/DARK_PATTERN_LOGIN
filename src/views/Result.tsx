@@ -29,7 +29,10 @@ export function Result({ run, dispatch }: { run: Run; dispatch: (action: GameAct
       </div>
       <div className="result-actions">
         <p>今回のシード <code>{record.seed}</code></p>
-        <button type="button" className="btn btn--primary" onClick={() => dispatch({ type: 'replay' })}>別の構成で遊ぶ</button>
+        <div className="result-links">
+          <a className="btn btn--primary" href="#answers">答え合わせを見る</a>
+          <button type="button" className="btn" onClick={() => dispatch({ type: 'replay' })}>別の構成で遊ぶ</button>
+        </div>
       </div>
       {run.records.length > 1 && (
         <details className="past-records">

@@ -1,5 +1,7 @@
 import type { EventId, PatternId, Stage, StepId } from './types'
 
+export const stages: readonly Stage[] = [1, 2, 3, 4, 5]
+
 export const stageNames: Record<Stage, string> = {
   1: 'トップページ',
   2: '会員登録・プラン選択',
